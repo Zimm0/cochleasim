@@ -20,7 +20,7 @@ At each position x:
        cannot be estimated and are reported as NaN.
 
 This module is agnostic to the source of the look-up table: it may come
-from real measurements (as in Olson's example) or from a simulated
+from real measurements or from a simulated
 frequency response. The table is supplied by the caller.
 """
 
@@ -49,6 +49,7 @@ class LookupTable:
     f_over_BF: np.ndarray
     amplitude: np.ndarray
     phase_cycles: np.ndarray
+    BF_hz: float = None
 
     def __post_init__(self):
         self.f_over_BF = np.asarray(self.f_over_BF, dtype=float)
@@ -271,3 +272,91 @@ def plot_spatial_responses(
     ax_phase.grid(True, alpha=0.3)
 
     return fig, ax_amplitude, ax_phase
+
+
+def plot_frequency_response(
+    lookup_table: LookupTable,
+    ax_amplitude=None,
+    ax_phase=None,
+):
+    """
+    Plot the frequency response stored in a LookupTable (amplitude and
+    phase as a function of frequency).
+
+    If the LookupTable has a BF_hz value, the x-axis shows frequency in
+    Hz. Otherwise it shows the normalized frequency f/BF.
+
+    Parameters
+    ----------
+    lookup_table : LookupTable
+        Frequency response look-up table to plot.
+    ax_amplitude, ax_phase : matplotlib.axes.Axes, optional
+        Axes to draw on. If not provided, a new figure is created.
+
+    Returns
+    -------
+    fig, ax_amplitude, ax_phase
+    """
+    import matplotlib.pyplot as plt
+
+    if ax_amplitude is None or ax_phase is None:
+        fig, (ax_amplitude, ax_phase) = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
+    else:
+        fig = ax_amplitude.figure
+
+    if lookup_table.BF_hz is not None:
+        x = lookup_table.f_over_BF * lookup_table.BF_hz
+        xlabel = "frequency (Hz)"
+    else:
+        x = lookup_table.f_over_BF
+        xlabel = "frequency / BF"
+
+    ax_amplitude.semilogy(x, lookup_table.amplitude)
+    ax_amplitude.set_ylabel("amplitude (Pa)")
+    ax_amplitude.set_title("Frequency response")
+    ax_amplitude.grid(True, which="both", alpha=0.3)
+
+    ax_phase.plot(x, lookup_table.phase_cycles)
+    ax_phase.set_ylabel("phase (cycles)")
+    ax_phase.set_xlabel(xlabel)
+    ax_phase.grid(True, alpha=0.3)
+
+    return fig, ax_amplitude, ax_phase
+
+
+def plot_tonotopic_map(
+    cf_distance_cm: np.ndarray,
+    cf_hz: np.ndarray,
+    ax=None,
+):
+    """
+    Plot a tonotopic map: characteristic frequency as a function of
+    distance from the cochlear base.
+
+    Parameters
+    ----------
+    cf_distance_cm : ndarray
+        Distance from the cochlear base (cm).
+    cf_hz : ndarray
+        Characteristic frequency (Hz) at each position.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. If not provided, a new figure is created.
+
+    Returns
+    -------
+    fig, ax
+    """
+    import matplotlib.pyplot as plt
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(7, 4))
+    else:
+        fig = ax.figure
+
+    ax.semilogy(cf_distance_cm * 10, cf_hz / 1000)
+    ax.set_xlabel("distance from base (mm)")
+    ax.set_ylabel("CF (kHz)")
+    ax.set_title("Tonotopic map")
+    ax.grid(True, which="both", alpha=0.3)
+
+    return fig, ax

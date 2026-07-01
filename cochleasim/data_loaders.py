@@ -46,6 +46,7 @@ def load_frequency_response_table(filepath: str = None) -> LookupTable:
         f_over_BF=np.array(f_over_BF),
         amplitude=np.array(amplitude),
         phase_cycles=np.array(phase_cycles),
+        BF_hz=19000.0 if filepath is None else None,
     )
 
 
