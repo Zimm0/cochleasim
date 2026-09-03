@@ -1,0 +1,2 @@
+species,f_over_cf_low,f_over_cf_high,delta_cycles,source
+human,0.02,0.9,-0.55,"Tubelli, A.A. et al. ""How the Human Cochlea Moves: Biomechanical Modeling of a Wide Layered Osseous Spiral Lamina."" -- finite-element human cochlear model validated against temporal-bone motion measurements. Phase at the ~11 kHz BF place decreases from approximately +0.35 cycles at f/BF=0.02 to -0.20 cycles at f/BF=0.9 (long-wavelength, pre-dispersive region), i.e. -0.55 cycles total. Measured data show similar though variable trends."

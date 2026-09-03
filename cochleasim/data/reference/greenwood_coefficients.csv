@@ -1,0 +1,3 @@
+species,A,a,k,units,source
+human,165.4,2.1,0.88,Hz,"Greenwood, D.D. (1990). ""A cochlear frequency-position function for several species -- 29 years later."" J. Acoust. Soc. Am. 87(6), 2592-2605. Standard human coefficients (x = fraction of BM length from the apex, 0 to 1)."
+cat,456.0,2.1,0.8,Hz,"Liberman, M.C. (1982). ""The cochlear frequency map for the cat: labeling auditory-nerve fibers of known characteristic frequency."" J. Acoust. Soc. Am. 72(5), 1441-1449. Greenwood-form least-squares fit to Liberman's directly-measured cat place-frequency data, as reported in Landsberger et al. (2025), PMC12170178 (x = fraction of organ-of-Corti length from the apex, 0 to 1)."

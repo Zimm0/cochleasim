@@ -5,16 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cochleasim"
 version = "0.1.0"
-description = "Virtual testbench for cochlear implant coding strategy comparison"
+description = "Python library for simulation and validation of active human cochlear mechanics"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
     {name = "Antonio Perez Lopez", email = "zimmo04@icloud.com"}
 ]
 keywords = [
-    "cochlear implant",
-    "CI",
-    "coding strategy",
+    "cochlea",
+    "cochlear mechanics",
+    "auditory model",
+    "biomechanics",
     "signal processing",
     "neural simulation"
 ]
@@ -25,6 +26,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 requires-python = ">=3.11"
@@ -33,6 +36,7 @@ dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.11.0",
     "matplotlib>=3.7.0",
+    "control>=0.9.4",
 ]
 
 [project.optional-dependencies]
@@ -63,6 +67,7 @@ where = ["."]
 
 [tool.setuptools.package-data]
 "cochleasim.data" = ["*.csv"]
+"cochleasim.data.reference" = ["*.csv"]
 
 [tool.black]
 line-length = 100

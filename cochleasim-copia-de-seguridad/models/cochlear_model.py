@@ -26,6 +26,7 @@ of Southampton, Institute of Sound and Vibration Research.
 import numpy as np
 from dataclasses import dataclass
 from typing import Callable
+from scipy.linalg import solve_banded
 
 
 P_REF_DYN_CM2 = 2.0e-4
@@ -102,67 +103,71 @@ def _middle_ear_impedance(omega, params: CochlearParams):
     return params.k_m / (1j * omega) + params.c_m + 1j * omega * params.m_m
 
 
-def solve_pressure(omega, Pe, params, N=N_DEFAULT):
+def solve_pressure(omega, Pe, params, N=251):
     """
-    Solve for Pd(x) at a single frequency omega via the double-sweep
-    (Thomas) algorithm, in O(N) time. See memoria Anexo A.2 for the
-    full derivation of the forward/backward recursions below.
-
+    Resuelve el sistema tridiagonal derivado para Pd(x) a una frecuencia omega.
+ 
     Parameters
     ----------
     omega : float
-        Angular frequency (rad/s).
+        Frecuencia angular (rad/s).
     Pe : complex
-        Input pressure at the eardrum.
-    params : CochlearParams
+        Presión de entrada en el tímpano.
+    params : object
+        Debe exponer: L, H, W, rho, As, Am, Gm, ch, k_m, c_m, m_m, Zp(x, omega)
     N : int
-        Number of grid points. N=1000 is the converged, validated grid
-        size (memoria 5.1.2); the default matches it.
-
+        Número de nodos de la malla.
+ 
     Returns
     -------
     x : ndarray (N,)
     Pd : ndarray (N,) complex
     """
-    L, W, rho = params.L, params.W, params.rho
+    L, H, W, rho = params.L, params.H, params.W, params.rho
     As, Am, Gm, ch = params.A_s, params.A_m, params.G_m, params.c_h
-    H = params.H(0.0)  # H is x-independent for every table currently provided
-
+ 
     Delta = L / (N - 1)
     x = np.arange(N) * Delta
+ 
     Zm = _middle_ear_impedance(omega, params)
-
-    # Middle-ear boundary condition (base), one-sided
+    H = params.H(0.0)  # H se trata como constante
+ 
+    # --- semilla del oído medio (base), método de un solo lado ---
+    # a0 = -2i*omega*rho*Delta*As / (Zm*W*H)
     a0 = -2j * omega * rho * Delta * As / (Zm * W * H)
-    p0 = -2j * omega * rho * Delta * Am * Pe / (Zm * Gm * W * H)  # As cancels out
-
-    a = np.zeros(N + 1, dtype=complex)  # a[0]=a0; a[1..N] <-> a1..aN
+    # p0 = (Am/(Gm*As)) * a0 * Pe   -> As se cancela
+    p0 = -2j * omega * rho * Delta * Am * Pe / (Zm * Gm * W * H)
+ 
+    a = np.zeros(N + 1, dtype=complex)  # a[0]=a0 ; a[1..N] <-> a1..aN
     p = np.zeros(N + 1, dtype=complex)
-    a[0], p[0] = a0, p0
-
-    # Row 1: (1+a0)*Pd1 - Pd2 = p0  =>  a1 = 1/(1+a0)
+    a[0] = a0
+    p[0] = p0
+ 
+    # fila 1: (1+a0) Pd1 - Pd2 = p0  ->  a1 = 1/(1+a0)
     a[1] = 1.0 / (1.0 + a[0])
     p[1] = a[1] * p[0]
-
-    # Forward sweep, interior rows n=2..N-1
+ 
+    # filas interiores n=2..N-1
     for n in range(2, N):
-        zn = (H / Delta) * partition_impedance(x[n - 1], omega, params)  # x[n-1] == x_n, 0-indexed
+        zn = (H / Delta) * partition_impedance(x[n - 1], omega, params)  # x[n-1] = x_n (x 0-indexado)
         a[n] = 1.0 / (2.0 - a[n - 1] + 2j * omega * rho * Delta / zn)
         p[n] = a[n] * p[n - 1]
-
-    # Apex boundary condition closes the system, giving Pd[N-1] directly
+ 
+    # cierre en el apice: cruce de (dagger) con la fila N -> primer valor numerico
+    # PdN = p_{N-1} / (1 - a_{N-1} - 2i*omega*rho*Delta/ch)
     Pd = np.zeros(N, dtype=complex)
     if ch is not None and ch != 0:
         denom = 1.0 - a[N - 1] - 2j * omega * rho * Delta / ch
         Pd[N - 1] = p[N - 1] / denom
     else:
-        # ch -> 0 (pressure release): the 1/ch term diverges, so Pd(x_N) -> 0
+        # limite ch -> 0 (liberacion de presion): el termino 2i*omega*rho*Delta/ch
+        # diverge, y Pd(x_N) -> 0 directamente -- no se fuerza la division por cero.
         Pd[N - 1] = 0.0
-
-    # Backward sweep: Pd(x_n) = p_n + a_n * Pd(x_{n+1}), n=N-1..1
+ 
+    # sustitucion regresiva: Pd(x_n) = p_n + a_n * Pd(x_{n+1}), n=N-1..1
     for n in range(N - 1, 0, -1):
         Pd[n - 1] = p[n] + a[n] * Pd[n]
-
+ 
     return x, Pd
 
 
